@@ -48,11 +48,12 @@ class LabelInput(tk.Frame):
     self, parent, label, inp_cls,
     inp_args, *args, **kwargs
    ):
-    super().__init__(parent, *args, **kwargs)
+    super().__init__(parent, *args, **kwargs)   # parent
     self.label = tk.Label(self, text=label, anchor='w')
     self.input = inp_cls(self, **inp_args)
 
     # side-by-side layout
+    # parent.columnconfigure(1, weight=1) not really
     self.columnconfigure(1, weight=1)
     self.label.grid(sticky=tk.E + tk.W)
     self.input.grid(row=0, column=1, sticky=tk.E + tk.W)
@@ -65,19 +66,19 @@ class LabelInput(tk.Frame):
 
 
 # Uncomment to try it, but comment this code again before sub-classing tk
-#root = tk.Tk()
-#li1 = LabelInput(root, 'Name', tk.Entry, {'bg': 'red'})
-#li1.grid()
-#age_var = tk.IntVar(root, value=21)
-#li2 = LabelInput(
+# root = tk.Tk()
+# li1 = LabelInput(root, 'Name', tk.Entry, {'bg': 'red'})
+# li1.grid()
+# age_var = tk.IntVar(root, value=21)
+# li2 = LabelInput(
 #  root,
 #  'Age',
 #  tk.Spinbox,
 #  {'textvariable': age_var, 'from_': 10, 'to': 150}
-#)
-#li2.grid()
-#root.mainloop()
-#exit()
+# )
+# li2.grid()
+# root.mainloop()
+# exit()
 
 ##############################
 # Building component objects #
@@ -113,16 +114,16 @@ class MyForm(tk.Frame):
 
 # We can even subclass Tk
 
-class Application(tk.Tk):
+class Application(tk.Tk):   # - sub-classing . self= (root) tk.Tk.. instance is tk
   """A simple form application"""
 
   def __init__(self, *args, **kwargs):
     super().__init__(*args, **kwargs)
     self.jsonvar = JSONVar()
     self.output_var = tk.StringVar()
-    tk.Label(self, text='Please fill the form').grid(sticky='ew')
-    MyForm(self, self.jsonvar).grid(sticky='nsew')
-    tk.Label(self, textvariable=self.output_var).grid(sticky='ew')
+    tk.Label(self, text='Please fill the form').grid(sticky='ew') # I'm root (r,c) (0,0)
+    MyForm(self, self.jsonvar).grid(sticky='nsew')  # MyForm instance (1,0), no variable? 
+    tk.Label(self, textvariable=self.output_var).grid(sticky='ew')  # on root
     self.columnconfigure(0, weight=1)
     self.rowconfigure(1, weight=1)
 
