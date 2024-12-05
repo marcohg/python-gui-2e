@@ -16,95 +16,86 @@ from tkinter import font
 
 class MainFrame(tk.Frame):
   """Main Frame holds application widgets"""
+  # def __init__(self, parent, title_arg, vars, *args, **kwargs):
   def __init__(self, parent, vars, *args, **kwargs):
     super().__init__(parent, *args, **kwargs)
-    # Define fonts styles 
-    title_font = font.Font( family='Anta', size=30,
-    weight='bold', slant='roman', underline=False, overstrike=False
-    )
-    value_font = font.Font( family='Anta', size=80,
-    weight='bold', slant='roman', underline=False, overstrike=False
-    )
-    unit_font = font.Font( family='Anta', size=30,
-    weight='normal', slant='italic', underline=False, overstrike=False
-    )
     
     # Root geometry
     parent.title("Display Application")
     parent.geometry('800x600+50+10')  # 800x600 ->1280x720 (16:9) -> 1920x1080
     parent.resizable(False, False) # comment out for testing.
 
-    self.title_var = tk.StringVar()
-    # self.speed_var = tk.DoubleVar() # tk.StringVar()
-    self.speed_units = 'mt/min'
-    self.total_var = tk.StringVar()
-    self.total_units = 'mt'
-    
-    self.title_var.set('Line 1 Production Status')
-    
     # Expand the 2 columns
     self.columnconfigure(0, weight=4)
     self.columnconfigure(1, weight=1)
 
-    tk.Label(self, textvariable=self.title_var, font= title_font).grid(columnspan=2,sticky=tk.EW) #kwargs['title'].grid(sticky=tk.EW)
     i = 0
     for key,var in vars.items() :
-      var['txt_var'].set(var['value'])
-      tk.Label(self, textvariable = var['txt_var'], 
-             font= value_font).grid(row=i+1, column=0,sticky=tk.EW)
-      tk.Label(self, text=var['units'], font=unit_font).grid(row=i+1, column=1, sticky=tk.W)
-      i += 1
-  
+      if key == 'title':
+        var['txt_var'].set(var['text'])
+        tk.Label(self, textvariable=var['txt_var'], font= var['font']
+        ).grid(columnspan=2,sticky=tk.EW)
+      else :
+        if key != 'status' : # Variables value and their units
+          var['txt_var'].set(var['value'])
+          tk.Label(self, textvariable = var['txt_var'],font= var['font'][0]
+          ).grid(row=i+1, column=0,sticky=tk.EW)
+          tk.Label(self, text=var['units'], font=var['font'][1]
+          ).grid(row=i+1, column=1, sticky=tk.W)
+          i += 1
 
 class StatusFrame(tk.Frame):
   """Status Frame holds status and notifications """
-  def __init__(self, parent, status_var, *args, **kwargs):
+  def __init__(self, parent, var, event, font_arg, *args, **kwargs):
     kwargs['relief'] = 'groove'
     kwargs['borderwidth'] = 5
     super().__init__(parent, *args, **kwargs)
-    # Define fonts styles 
-    self.status_font = font.Font( family='Arial', size=18,
-      weight='bold', slant='roman', underline=False, overstrike=False 
-      )
-
     pad = {'padx': 10, 'pady': 5}
-    ttk.Label( self, text="1",font=self.status_font).grid(row=0, column=0, **pad)
-    ttk.Label( self, textvariable=status_var, font=self.status_font).grid(sticky=tk.W, row=0, column=1, **pad)
-    ttk.Label( self, text="3",font=self.status_font).grid(row=0, column=2, **pad)
-    b1 = tk.Button( self, text='ACK',font=self.status_font) # ttk no font
+    ttk.Label( self, text="1",font=font_arg).grid(row=0, column=0, **pad)
+    ttk.Label( self, textvariable=var, font=font_arg).grid(sticky=tk.W, row=0, column=1, **pad)
+    ttk.Label( self, text="3",font=font_arg).grid(row=0, column=2, **pad)
+    b1 = tk.Button( self, text='ACK',repeatdelay=100, repeatinterval= 250, font=font_arg) # ttk no font
     b1.grid(row=0, column=3, sticky=tk.E ) # padx='10', pady=5)
-    
-    # status_frame.grid(row=1, padx=10, pady=10, sticky=tk.EW)
     self.columnconfigure(1, weight=1)
+    b1.configure(command=event)
 
 class Application(tk.Tk):
   """Line Display root window"""
-
   def __init__(self, *args, **kwargs):
     super().__init__(*args, **kwargs) # self = tk.Tk
 
-    self.status_var = tk.StringVar()
-
+    fonts = {
+      'title': font.Font( family='Anta', size=30, weight='bold', slant='roman', underline=False, overstrike=False ),
+      'value': font.Font( family='Anta', size=80, weight='bold', slant='roman', underline=False, overstrike=False ),
+      'unit' : font.Font( family='Anta', size=30, weight='normal', slant='italic', underline=False, overstrike=False ),
+      'status': font.Font( family='Arial', size=18, weight='bold', slant='roman', underline=False, overstrike=False )
+    }
+    self.ack = False
     self.vars = {
-      'speed': { 'value': 0.0, 'txt_var': tk.StringVar(), 'units': 'mt/min' },
-      'total': { 'value': 0.0, 'txt_var': tk.StringVar(), 'units': 'mt' },
+      'title': { 'text': 'Line 1 Production Status 2', 'txt_var': tk.StringVar(), 'font': fonts['title'] },
+      'speed': { 'value': 0.0, 'txt_var': tk.StringVar(), 'units': 'mt/min', 'font': (fonts['value'], fonts['unit']) },
+      'total': { 'value': 0.0, 'txt_var': tk.StringVar(), 'units': 'mt', 'font': (fonts['value'], fonts['unit']) },
+      'status': tk.StringVar() 
     }
 
     # Main Frame is at row 0 and expand it in row and column 
     self.columnconfigure(0, weight=1)
     self.rowconfigure(0,weight=1)
     main_frame_args = { 'relief': 'groove' ,'borderwidth': 5 } 
-    self.mf = MainFrame(self, self.vars, **main_frame_args ).grid(padx=10, pady=10, sticky=tk.NSEW)
-    
-    self.status_var = tk.StringVar()
-    StatusFrame(self, self.status_var ).grid(padx=10, pady=10, sticky=tk.NSEW)
+    MainFrame(self, self.vars, **main_frame_args ).grid(padx=10, pady=10, sticky=tk.NSEW)
+    StatusFrame(self, self.vars['status'], self.on_ack, fonts['status'] ).grid(padx=10, pady=10, sticky=tk.NSEW)
     
     # Init some display data
     self.ticks = 0
     self.vars['speed']['value'] = 100.0
-    
+    self.vars['status'].set('Start Application')
+
     # Trigger first periodic task
     self.after(2500, self.periodic_task)
+  
+  def on_ack(self) :
+    """User ACK status"""
+    self.ack = True
     
   def periodic_task(self) :
     speed = self.vars['speed']  # reference alias
@@ -121,7 +112,12 @@ class Application(tk.Tk):
     if total['value'] > 600:
       status = "Length above 600"
 
-    self.status_var.set(status)
+    if self.ack :
+      self.vars['status'].set('Acknowledged!')
+      self.ack = False
+    else :
+      self.vars['status'].set(status)
+
     self.after(250, self.periodic_task)
     
 if __name__ == "__main__":
